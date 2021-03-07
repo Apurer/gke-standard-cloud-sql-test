@@ -1,0 +1,11 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: gke-test-deny-external-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: gke-standard-db-test
+  policyTypes:
+  - Egress
+  egress: []

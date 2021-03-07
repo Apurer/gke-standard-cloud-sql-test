@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gke-standard-db-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gke-standard-db-test
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: gke-standard-db-test
+    spec:
+      serviceAccountName: sql-user
+      containers:
+      - name: cloud-sql-proxy
+        # It is recommended to use the latest version of the Cloud SQL proxy
+        # Make sure to update on a regular schedule!
+        image: gcr.io/cloudsql-docker/gce-proxy:1.17
+        command:
+          - "/cloud_sql_proxy"
+          # If connecting from a VPC-native GKE cluster, you can use the
+          # following flag to have the proxy connect over private IP
+          - "-ip_address_types=PRIVATE"
+
+          # Replace DB_PORT with the port the proxy should listen on
+          # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
+          - "-instances=e2eechat-apurer:europe-west4:test-database=tcp:3306"
+        securityContext:
+          # The default Cloud SQL proxy image runs as the
+          # "nonroot" user and group (uid: 65532) by default.
+          runAsNonRoot: true
+      - name: gke-standard-db-test
+        image: gcr.io/PROJECT_ID/IMAGE:TAG
+        ports:
+        - containerPort: 7331
+          protocol: TCP
+        volumeMounts:
+          - name: tls
+            mountPath: /etc/tls
+            readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 5777
+        env:
+          - name: TCP_SERVER_PORT
+            value: "7331"
+          - name: TLS_CERT
+            value: /etc/tls/tls.crt
+          - name: TLS_KEY
+            value: /etc/tls/tls.key
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: db
+                key: username
+          - name: DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: db
+                key: password
+          - name: DB_NAME
+            valueFrom:
+              secretKeyRef:
+                name: db
+                key: database
+          - name: DB_PORT
+            valueFrom:
+              secretKeyRef:
+                name: db
+                key: port
+          - name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: db
+                key: host
+        resources:
+          requests:
+            cpu: 100m
+          limits:
+            cpu: 100m
+      volumes:
+        - name: tls
+          secret:
+            secretName: yourdomain-tls
