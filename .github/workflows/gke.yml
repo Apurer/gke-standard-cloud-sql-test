@@ -23,7 +23,7 @@ env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   GKE_CLUSTER: apurer-with-cloud-sql    # TODO: update to cluster name
   GKE_ZONE: europe-west6-b  # TODO: update to cluster zone
-  DEPLOYMENT_NAME: gke-db-test # TODO: update to deployment name
+  DEPLOYMENT_NAME: gke-standard-db-test # TODO: update to deployment name
   NAMESPACE_NAME: gke-test-namespace
   IMAGE: go-web-app
 
